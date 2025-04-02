@@ -1,6 +1,7 @@
 import os
 import tempfile
 import argparse
+from time import perf_counter
 
 import torch
 import whisper
@@ -46,7 +47,10 @@ def extract_audio(
         os.chdir(tdir)
         download_audio(url)
         fn = os.listdir()[0]
+        start_time = perf_counter()
         lines = transcribe(fn, model=model, device=device, lang=lang)
+        end_time = perf_counter()
+        print(f"Transcription took {end_time - start_time:.2f} seconds.")
         os.chdir(outdir)  # 返回到原工作目录，否则无法删除临时文件
     with open(save_fn, "w", encoding="utf-8") as f:
         f.writelines(lines)
