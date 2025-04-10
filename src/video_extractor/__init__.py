@@ -2,10 +2,13 @@ import os
 import tempfile
 import argparse
 from time import perf_counter
+import subprocess
 
 import torch
 import whisper
 from yt_dlp import YoutubeDL
+
+from .utils import is_url
 
 
 def download_audio(url: str) -> None:
@@ -45,8 +48,21 @@ def extract_audio(
     outdir = os.getcwd()
     with tempfile.TemporaryDirectory() as tdir:
         os.chdir(tdir)
-        download_audio(url)
-        fn = os.listdir()[0]
+        if is_url(url):
+            download_audio(url)
+            fn = os.listdir()[0]
+        else:
+            command = [
+                "ffmpeg",
+                "-i",
+                url,  # 输入视频文件
+                "-vn",  # 禁用视频流
+                "-acodec",
+                "copy",  # 直接复制音频流（不重新编码）
+                "audio.m4a",
+            ]
+            subprocess.run(command, check=True)
+            fn = "audio.m4a"
         start_time = perf_counter()
         lines = transcribe(fn, model=model, device=device, lang=lang)
         end_time = perf_counter()
